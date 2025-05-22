@@ -1,30 +1,86 @@
+;; quality-certification.clar
+;; This contract records testing results
 
-;; title: quality-certification
-;; version:
-;; summary:
-;; description:
+(define-data-var last-certification-id uint u0)
 
-;; traits
-;;
+(define-map quality-certifications
+  { certification-id: uint }
+  {
+    product-id: uint,
+    certifier: principal,
+    certification-date: uint,
+    certification-standard: (string-utf8 100),
+    passed: bool,
+    notes: (string-utf8 500)
+  }
+)
 
-;; token definitions
-;;
+(define-map test-results
+  { certification-id: uint, test-name: (string-utf8 100) }
+  {
+    result: (string-utf8 100),
+    passed: bool,
+    test-date: uint,
+    tester: principal
+  }
+)
 
-;; constants
-;;
+(define-public (create-certification
+    (product-id uint)
+    (certification-standard (string-utf8 100))
+    (notes (string-utf8 500)))
+  (let
+    (
+      (new-id (+ (var-get last-certification-id) u1))
+    )
+    (var-set last-certification-id new-id)
+    (ok (map-set quality-certifications
+      { certification-id: new-id }
+      {
+        product-id: product-id,
+        certifier: tx-sender,
+        certification-date: block-height,
+        certification-standard: certification-standard,
+        passed: false,
+        notes: notes
+      }
+    ))
+  )
+)
 
-;; data vars
-;;
+(define-public (add-test-result
+    (certification-id uint)
+    (test-name (string-utf8 100))
+    (result (string-utf8 100))
+    (passed bool))
+  (ok (map-set test-results
+    { certification-id: certification-id, test-name: test-name }
+    {
+      result: result,
+      passed: passed,
+      test-date: block-height,
+      tester: tx-sender
+    }
+  ))
+)
 
-;; data maps
-;;
+(define-public (finalize-certification (certification-id uint) (passed bool))
+  (let
+    (
+      (certification (unwrap! (map-get? quality-certifications { certification-id: certification-id }) (err u1)))
+    )
+    (asserts! (is-eq tx-sender (get certifier certification)) (err u2))
+    (ok (map-set quality-certifications
+      { certification-id: certification-id }
+      (merge certification { passed: passed })
+    ))
+  )
+)
 
-;; public functions
-;;
+(define-read-only (get-certification (certification-id uint))
+  (map-get? quality-certifications { certification-id: certification-id })
+)
 
-;; read only functions
-;;
-
-;; private functions
-;;
-
+(define-read-only (get-test-result (certification-id uint) (test-name (string-utf8 100)))
+  (map-get? test-results { certification-id: certification-id, test-name: test-name })
+)

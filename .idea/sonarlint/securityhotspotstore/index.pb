@@ -9,3 +9,5 @@ Q
 !contracts/lifecycle-tracking.clar,6/4/64779f47ff70ce7ad32fcbd7e529ea6c72385543
 S
 #contracts/product-verification.clar,f/6/f680411921599bc420e7eda8dd85464af04b8c32
+T
+$contracts/quality-certification.clar,e/7/e7f9bb22d7b3c78780a97a3195672657ab8d9843
