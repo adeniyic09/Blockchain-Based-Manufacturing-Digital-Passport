@@ -1,30 +1,57 @@
+;; component-tracking.clar
+;; This contract records parts and materials
 
-;; title: component-tracking
-;; version:
-;; summary:
-;; description:
+(define-data-var last-component-id uint u0)
 
-;; traits
-;;
+(define-map components
+  { component-id: uint }
+  {
+    name: (string-utf8 100),
+    supplier: principal,
+    batch-number: (string-utf8 50),
+    material-type: (string-utf8 50),
+    production-date: uint
+  }
+)
 
-;; token definitions
-;;
+(define-map product-components
+  { product-id: uint, component-id: uint }
+  { quantity: uint }
+)
 
-;; constants
-;;
+(define-public (register-component
+    (name (string-utf8 100))
+    (batch-number (string-utf8 50))
+    (material-type (string-utf8 50)))
+  (let
+    (
+      (new-id (+ (var-get last-component-id) u1))
+    )
+    (var-set last-component-id new-id)
+    (ok (map-set components
+      { component-id: new-id }
+      {
+        name: name,
+        supplier: tx-sender,
+        batch-number: batch-number,
+        material-type: material-type,
+        production-date: block-height
+      }
+    ))
+  )
+)
 
-;; data vars
-;;
+(define-public (add-component-to-product (product-id uint) (component-id uint) (quantity uint))
+  (ok (map-set product-components
+    { product-id: product-id, component-id: component-id }
+    { quantity: quantity }
+  ))
+)
 
-;; data maps
-;;
+(define-read-only (get-component (component-id uint))
+  (map-get? components { component-id: component-id })
+)
 
-;; public functions
-;;
-
-;; read only functions
-;;
-
-;; private functions
-;;
-
+(define-read-only (get-product-component (product-id uint) (component-id uint))
+  (map-get? product-components { product-id: product-id, component-id: component-id })
+)
